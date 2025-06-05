@@ -1,0 +1,6 @@
+spring:
+  # Change apiKey to something more secure
+  apiKey: idk
+  jwt:
+    secret: 4vG8UCHP8bGTo7LD0AzO0mspTJSR3E7ijjr0hKD4VJBaV1Jqrf
+    expire: 864000000
