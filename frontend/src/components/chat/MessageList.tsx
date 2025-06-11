@@ -33,17 +33,25 @@ function MessageList({ currentUser }: { currentUser: IUser }) {
   useSubscription(`/user/${currentUser.username}/queue/messages`, (message) => {
     try {
       const parsedMessage = JSON.parse(message.body)
-      
-      // Handle new chat messages
-      if (parsedMessage.content && parsedMessage.conversationId) {
-        // Invalidate and refetch conversations
-        queryClient.invalidateQueries({ queryKey: ["messageList"] })
+
+      // Skip ONLINE_USERS updates
+      if (parsedMessage.type === "ONLINE_USERS") {
+        console.log("Skipping ONLINE_USERS update")
+        return
       }
-      
+
       // Handle member join/leave notifications
       if (parsedMessage.type === "MEMBER_JOINED" || parsedMessage.type === "MEMBER_LEFT") {
+        console.log("✅ Invalidating for member join/leave")
         queryClient.invalidateQueries({ queryKey: ["messageList"] })
+        return
       }
+
+      if (parsedMessage.conversationId) {
+        queryClient.invalidateQueries({ queryKey: ["messageList"] })
+        return
+      }
+    
     } catch (error) {
       console.error("Error parsing message in MessageList:", error)
     }

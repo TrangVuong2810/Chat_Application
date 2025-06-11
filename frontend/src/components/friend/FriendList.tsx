@@ -25,18 +25,24 @@ const FriendList = () => {
     queryKey: ["friendList"],
     queryFn: () => fetchFriendListApi(currentUser?.id),
     enabled: !!currentUser?.id,
+    staleTime: 0, // Always consider data stale
+    refetchOnWindowFocus: true,
   })
 
   const { data: friendRequestListData, isLoading: requestsLoading, refetch: refetchRequests } = useQuery({
     queryKey: ["friendRequestList"],
     queryFn: () => fetchFriendRequestListApi(currentUser?.id),
     enabled: !!currentUser?.id,
+    staleTime: 0, // Always consider data stale
+    refetchOnWindowFocus: true,
   })
 
   const { data: nonFriendUsersData, isLoading: usersLoading, refetch: refetchNonFriends } = useQuery({
     queryKey: ["nonFriendUsers"],
     queryFn: () => fetchNonFriendUsersApi(currentUser?.id, currentUser?.token),
     enabled: !!currentUser?.id,
+    staleTime: 0, // Always consider data stale
+    refetchOnWindowFocus: true,
   })
 
   // Data extraction

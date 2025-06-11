@@ -25,29 +25,28 @@ const FriendRequestItem = ({ currentUserId, friend }: FriendRequestItemProps) =>
         senderId: currentUserId,
         friendRequestStatus: status,
       }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["friendList"],
-      })
-      queryClient.invalidateQueries({
-        queryKey: ["friendRequestList"],
-      })
-      queryClient.invalidateQueries({
-        queryKey: ["nonFriendUsers"],
-      })
-      
-      queryClient.invalidateQueries({
-        queryKey: ["messageList"],
-      })
+    onSuccess: async (data, status) => {
+      // Only invalidate queries after successful backend response
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["friendRequestList"] }),
+        queryClient.invalidateQueries({ queryKey: ["friendList"] }),
+        queryClient.invalidateQueries({ queryKey: ["nonFriendUsers"] }),
+      ])
     },
+    onError: (error) => {
+      console.error("Failed to update friend request:", error)
+      // Optionally show error toast here
+    }
   })
 
   const handleAccept = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault()
     event.stopPropagation()
     mutate(FriendRequestStatus.ACCEPTED)
   }
 
   const handleReject = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault()
     event.stopPropagation()
     mutate(FriendRequestStatus.REJECTED)
   }

@@ -63,17 +63,17 @@ public class FriendRequestService implements IFriendRequestService {
         UUID senderId = senderRequest.getSenderId();
         FriendRequestStatus friendRequestStatus = FriendRequestStatus.valueOf(senderRequest.getFriendRequestStatus());
         FriendRequest friendRequest = friendRequestRepository.findById(requestId).orElseThrow(() -> new ResolutionException("Friend request not found"));
-        if(friendRequest.getSender().getId().equals(senderId) && friendRequestStatus.equals(FriendRequestStatus.PENDING)){
-            return ResponseEntity.badRequest().body(new ResponseObject(401, "The friend request cannot be accepted if you were the one who sent it"));
-        }
-        if(friendRequestStatus.equals(FriendRequestStatus.ACCEPTED)){
+
+        // Update the status
+        friendRequest.setStatus(friendRequestStatus);
+
+        // Only create conversation and set friendship date if accepted
+        if(friendRequestStatus.equals(FriendRequestStatus.ACCEPTED)) {
             friendRequest.setFriendshipDate(Instant.now());
 
-            // Create a single conversation between the two friends
             User sender = friendRequest.getSender();
             User receiver = friendRequest.getReceiver();
 
-            // Check if conversation already exists between these users
             List<UUID> participantIds = Arrays.asList(sender.getId(), receiver.getId());
             boolean conversationExists = conversationService.participantsHasConversation(participantIds);
 
@@ -86,9 +86,6 @@ public class FriendRequestService implements IFriendRequestService {
                 conversationService.createConversation(conversationRequest);
             }
         }
-        friendRequest.setStatus(friendRequestStatus);
-
-        friendRequestRepository.save(friendRequest);
 
         String message = "Change status to " + friendRequestStatus.name() + " successfully";
         return ResponseEntity.ok().body(new ResponseObject(201, message));
