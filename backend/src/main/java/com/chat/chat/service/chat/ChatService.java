@@ -183,12 +183,17 @@ public class ChatService implements IChatService {
         onlineUsersMessage.put("type", "ONLINE_USERS");
         onlineUsersMessage.put("metadata", Map.of("USERS", onlineUserIds));
 
-        for (User user : onlineUsers) {
-            simpMessagingTemplate.convertAndSendToUser(
-                    user.getUsername(),
-                    "/queue/messages",
-                    onlineUsersMessage
-            );
+        Set<String> connectedUsers = userSocketService.getConnectedUsernames();
+        for (String connectedUsername : connectedUsers) {
+            try {
+                simpMessagingTemplate.convertAndSendToUser(
+                        connectedUsername,
+                        "/queue/messages",
+                        onlineUsersMessage
+                );
+            } catch (Exception e) {
+                log.error(e.getMessage());
+            }
         }
     }
 
@@ -208,12 +213,20 @@ public class ChatService implements IChatService {
         onlineUsersMessage.put("type", "ONLINE_USERS");
         onlineUsersMessage.put("metadata", Map.of("USERS", onlineUserIds.toString()));
 
+        // Send to all conversation participants who are connected
         for (User participant : conversation.getParticipants()) {
-            simpMessagingTemplate.convertAndSendToUser(
-                    participant.getUsername(),
-                    "/queue/messages",
-                    onlineUsersMessage
-            );
+            try {
+                // Only send to users who have active WebSocket connections
+                if (userSocketService.findUserSocketByUsername(participant.getUsername()) != null) {
+                    simpMessagingTemplate.convertAndSendToUser(
+                            participant.getUsername(),
+                            "/queue/messages",
+                            onlineUsersMessage
+                    );
+                }
+            } catch (Exception e) {
+                log.error(e.getMessage());
+            }
         }
     }
 }

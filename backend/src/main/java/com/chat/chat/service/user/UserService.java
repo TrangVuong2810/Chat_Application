@@ -17,6 +17,8 @@ import com.chat.chat.service.conversation.ConversationService;
 import com.chat.chat.service.friendrequest.FriendRequestService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.ResponseEntity;
@@ -36,7 +38,7 @@ import jakarta.transaction.Transactional;
 @Service
 @RequiredArgsConstructor
 public class UserService implements IUserService {
-    //private final Faker faker;
+    private static final Log log = LogFactory.getLog(UserService.class);
     private final PasswordEncoder passwordEncoder;
     private final AuthService authService;
     private final UserRepository userRepository;
@@ -113,7 +115,9 @@ public class UserService implements IUserService {
     public List<User> getFriendList(UUID userId) {
         User user = userRepository.findById(userId).orElse(null);
         List<FriendRequestDto> friendRequests = friendRequestService.findFriendRequestsByUserId(userId);
-        List<FriendRequestDto> acceptedRequests = friendRequests.stream().filter(fr -> fr.getStatus().equals(FriendRequestStatus.ACCEPTED)).toList();
+        List<FriendRequestDto> acceptedRequests = friendRequests.stream()
+                .filter(fr -> fr.getStatus().equals(FriendRequestStatus.ACCEPTED))
+                .toList();
         for(FriendRequestDto requestDto : acceptedRequests) {
             List<UUID> friendList = new ArrayList<>();
             friendList.add(requestDto.getSender().getId());
@@ -123,17 +127,20 @@ public class UserService implements IUserService {
             }
         }
         return acceptedRequests.stream()
-                .map(request -> request.getReceiver().equals(user) ? request.getSender() : request.getReceiver()).collect(Collectors.toList());
+                .map(request -> request.getReceiver().getId().equals(userId) ?
+                        request.getSender() : request.getReceiver())
+                .collect(Collectors.toList());
     }
 
     @Override
     public User updateUserStateAndLastLogin(String username, UserState status, Instant date) {
         User existingUser = userRepository.findByUsername(username);
-        if(status.equals(UserState.ONLINE)){
-            existingUser.setUserState(UserState.ONLINE);
-        } else if (status.equals(UserState.OFFLINE)) {
-            existingUser.setUserState(UserState.OFFLINE);
-        }
+//        if(status.equals(UserState.ONLINE)){
+//            existingUser.setUserState(UserState.OFFLINE);
+//        } else if (status.equals(UserState.OFFLINE)) {
+//            existingUser.setUserState(UserState.ONLINE);
+//        }
+        existingUser.setUserState(status);
         existingUser.setLastOnline(date);
 
         return userRepository.save(existingUser);
@@ -213,5 +220,58 @@ public class UserService implements IUserService {
                 .collect(Collectors.toList());
     }
 
+    public synchronized boolean decrementUserSessions(String username) {
+        User user = userRepository.findByUsername(username);
 
+        if (user == null) {
+            throw new UsernameNotFoundException("User not found: " + username);
+        }
+
+        // Prevent sessions from going below 0
+        int currentSessions = Math.max(0, user.getSessions() - 1);
+        user.setSessions((byte) currentSessions);
+        userRepository.save(user);
+
+        log.info(username);
+        log.info(currentSessions);
+        return currentSessions == 0;
+    }
+
+    public synchronized void incrementUserSessions(String username) {
+        User user = userRepository.findByUsername(username);
+
+        if (user == null) {
+            throw new UsernameNotFoundException("User not found: " + username);
+        }
+
+        int newSessionCount = user.getSessions() + 1;
+        user.setSessions((byte) newSessionCount);
+        userRepository.save(user);
+
+        log.info(username);
+        log.info(newSessionCount);
+
+    }
+
+    public int getUserSessions(String username) {
+        User user = userRepository.findByUsername(username);
+
+        if (user == null) {
+            throw new UsernameNotFoundException("User not found: " + username);
+        }
+        return user.getSessions();
+    }
+
+    public synchronized void resetUserSessions(String username) {
+        User user = userRepository.findByUsername(username);
+
+        if (user == null) {
+            throw new UsernameNotFoundException("User not found: " + username);
+        }
+
+        // Reset sessions to 0
+        user.setSessions((byte) 0);
+        userRepository.save(user);
+
+    }
 }

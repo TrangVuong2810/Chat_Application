@@ -47,6 +47,14 @@ public class User {
     @Column(name = "current_sessions")
     private Byte sessions = 0;
 
+    public Byte getCurrentSessions() {
+        return sessions;
+    }
+
+    public void setCurrentSessions(Byte sessions) {
+        this.sessions = sessions;
+    }
+
 
     public User(String fullName, String username, String password, String email) {
         this.fullName = fullName;

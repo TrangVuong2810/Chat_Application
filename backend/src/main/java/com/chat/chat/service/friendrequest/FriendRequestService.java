@@ -5,18 +5,22 @@ import com.chat.chat.enums.FriendRequestStatus;
 import com.chat.chat.mapper.FriendRequestMapper;
 import com.chat.chat.model.FriendRequest;
 import com.chat.chat.model.User;
+import com.chat.chat.payload.request.ConversationRequest;
 import com.chat.chat.payload.request.SenderRequest;
 import com.chat.chat.payload.response.FriendshipStatus;
 import com.chat.chat.payload.response.ResponseObject;
 import com.chat.chat.repository.FriendRequestRepository;
 import com.chat.chat.repository.UserRepository;
+import com.chat.chat.service.conversation.ConversationService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.lang.module.ResolutionException;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -30,6 +34,9 @@ public class FriendRequestService implements IFriendRequestService {
     private FriendRequestRepository friendRequestRepository;
     @Autowired
     private FriendRequestMapper friendRequestMapper;
+    @Autowired
+    @Lazy
+    private ConversationService conversationService;
 
     public ResponseEntity<?> sendFriendInvitation(UUID senderId, UUID receiverId) {
         User sender = userRepository.findById(senderId).orElseThrow(() -> new ResolutionException("User not found"));
@@ -61,6 +68,23 @@ public class FriendRequestService implements IFriendRequestService {
         }
         if(friendRequestStatus.equals(FriendRequestStatus.ACCEPTED)){
             friendRequest.setFriendshipDate(Instant.now());
+
+            // Create a single conversation between the two friends
+            User sender = friendRequest.getSender();
+            User receiver = friendRequest.getReceiver();
+
+            // Check if conversation already exists between these users
+            List<UUID> participantIds = Arrays.asList(sender.getId(), receiver.getId());
+            boolean conversationExists = conversationService.participantsHasConversation(participantIds);
+
+            if (!conversationExists) {
+                ConversationRequest conversationRequest = ConversationRequest.builder()
+                        .participants(participantIds)
+                        .dateStarted(Instant.now())
+                        .build();
+
+                conversationService.createConversation(conversationRequest);
+            }
         }
         friendRequest.setStatus(friendRequestStatus);
 

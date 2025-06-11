@@ -9,6 +9,7 @@ import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import org.springframework.web.socket.config.annotation.WebSocketTransportRegistration;
 
 @Configuration
 @Slf4j
@@ -30,15 +31,24 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     }
 
     @Override
+    public void configureWebSocketTransport(WebSocketTransportRegistration registration) {
+        registration.setMessageSizeLimit(64 * 1024)
+                .setSendBufferSizeLimit(512 * 1024)
+                .setSendTimeLimit(20000);
+    }
+
+    @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {
         registration
                 .interceptors(channelInterceptor);
+        registration.taskExecutor().corePoolSize(4).maxPoolSize(10);
     }
 
     @Override
     public void configureClientOutboundChannel(ChannelRegistration registration) {
         registration
                 .interceptors(channelInterceptor);
+        registration.taskExecutor().corePoolSize(4).maxPoolSize(10);
     }
 
 }

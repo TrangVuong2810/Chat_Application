@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -53,5 +54,12 @@ public class UserSocketService {
                     return new UserStateDto(simpUser.getName(), UserState.ONLINE);
                 })
                 .collect(Collectors.toList());
+    }
+
+    public Set<String> getConnectedUsernames() {
+        return userRegistry.getUsers().stream()
+                .map(SimpUser::getName)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
     }
 }

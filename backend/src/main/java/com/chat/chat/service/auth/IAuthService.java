@@ -9,4 +9,5 @@ public interface IAuthService {
     ResponseEntity<?> registerUser(RegisterRequest registerRequest);
     ResponseEntity<?> login(LoginRequest loginRequest);
     Authentication authenticateUserFromHeaderAuth(String authHeader);
+    ResponseEntity<?> logout(String username);
 }

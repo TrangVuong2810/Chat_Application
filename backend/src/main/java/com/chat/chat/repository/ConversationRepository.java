@@ -1,6 +1,7 @@
 package com.chat.chat.repository;
 
 import com.chat.chat.model.Conversation;
+import com.chat.chat.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -20,4 +21,6 @@ public interface ConversationRepository extends JpaRepository<Conversation, UUID
     List<Conversation> findAllByUsername(String username);
 
     List<Conversation> findByGroupConversationTrue();
+
+    List<Conversation> findAllByParticipantsContaining(User participant);
 }
