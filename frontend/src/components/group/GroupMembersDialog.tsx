@@ -41,7 +41,7 @@ const GroupMembersDialog = ({ open, onClose, conversation, onlineMembers }: Grou
     if (isUserOnline(user.id)) {
       return "Online"
     }
-    return user.userState === UserState.OFFLINE ? "Offline" : "Away"
+    return user.userState === UserState.OFFLINE ? "Offline" : "Online"
   }
 
   const getStatusColor = (user: IUser) => {

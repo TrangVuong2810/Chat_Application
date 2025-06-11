@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { Card, CardHeader, CardContent, Typography, Box } from "@mui/material"
 import { IoPeopleSharp, IoPersonAdd, IoMailOpen } from "react-icons/io5"
 import { useAuthContext } from "@/context/useAuthContext"
@@ -19,34 +19,57 @@ const FriendList = () => {
   const { currentUser } = useAuthContext()
   const [tabValue, setTabValue] = useState(0)
   const { theme } = useThemeContext()
+  const queryClient = useQueryClient()
 
-  const { data: friendList, isLoading: friendsLoading } = useQuery({
+  const { data: friendListData, isLoading: friendsLoading, refetch: refetchFriends } = useQuery({
     queryKey: ["friendList"],
     queryFn: () => fetchFriendListApi(currentUser?.id),
+    enabled: !!currentUser?.id,
   })
 
-  const { data: friendRequestList, isLoading: requestsLoading } = useQuery({
+  const { data: friendRequestListData, isLoading: requestsLoading, refetch: refetchRequests } = useQuery({
     queryKey: ["friendRequestList"],
     queryFn: () => fetchFriendRequestListApi(currentUser?.id),
+    enabled: !!currentUser?.id,
   })
 
-  const { data: nonFriendUsers, isLoading: usersLoading } = useQuery({
+  const { data: nonFriendUsersData, isLoading: usersLoading, refetch: refetchNonFriends } = useQuery({
     queryKey: ["nonFriendUsers"],
     queryFn: () => fetchNonFriendUsersApi(currentUser?.id, currentUser?.token),
     enabled: !!currentUser?.id,
   })
 
+  // Data extraction
+  const friendList = Array.isArray(friendListData?.data) ? friendListData.data : 
+                    Array.isArray(friendListData) ? friendListData : []
+  const friendRequestList = Array.isArray(friendRequestListData?.data) ? friendRequestListData.data : 
+                           Array.isArray(friendRequestListData) ? friendRequestListData : []
+  const nonFriendUsers = Array.isArray(nonFriendUsersData?.data) ? nonFriendUsersData.data : 
+                        Array.isArray(nonFriendUsersData) ? nonFriendUsersData : []
+
   const handleChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue)
+
+    switch (newValue) {
+      case 0: // Friend Requests tab
+        refetchRequests()
+        break
+      case 1: // Friends tab
+        refetchFriends()
+        break
+      case 2: // Find Friends tab
+        refetchNonFriends()
+        break
+    }
   }
 
   const tabs = [
     {
-      label: `Requests ${friendRequestList?.length ? `(${friendRequestList.length})` : ""}`,
+      label: `Requests`,
       icon: <IoMailOpen size={18} />,
     },
     {
-      label: `Friends ${friendList?.length ? `(${friendList.length})` : ""}`,
+      label: `Friends`,
       icon: <IoPeopleSharp size={18} />,
     },
     {
@@ -122,12 +145,16 @@ const FriendList = () => {
         <TabPanel value={tabValue} index={0}>
           {requestsLoading ? (
             renderLoadingSkeleton()
-          ) : Array.isArray(friendRequestList) && friendRequestList.length === 0 ? (
+          ) : friendRequestList.length === 0 ? (
             renderEmptyState("No friend requests", <IoMailOpen size={48} />)
           ) : (
             <Box sx={{ p: 2 }}>
-              {(Array.isArray(friendRequestList) ? friendRequestList : []).map((friend: any, index: number) => (
-                <FriendRequestItem friend={friend} key={index} currentUserId={currentUser?.id} />
+              {friendRequestList.map((friend: any, index: number) => (
+                <FriendRequestItem 
+                  friend={friend} 
+                  key={friend?.id || `friend-request-${index}`} 
+                  currentUserId={currentUser?.id} 
+                />
               ))}
             </Box>
           )}
@@ -137,12 +164,15 @@ const FriendList = () => {
         <TabPanel value={tabValue} index={1}>
           {friendsLoading ? (
             renderLoadingSkeleton()
-          ) : Array.isArray(friendList) && friendList.length === 0 ? (
+          ) : friendList.length === 0 ? (
             renderEmptyState("No friends yet", <IoPeopleSharp size={48} />)
           ) : (
             <Box sx={{ p: 2 }}>
-              {(Array.isArray(friendList) ? friendList : []).map((friend: any, index: number) => (
-                <FriendItem friend={friend} key={index} />
+              {friendList.map((friend: any, index: number) => (
+                <FriendItem 
+                  friend={friend} 
+                  key={friend?.id || `friend-${index}`} 
+                />
               ))}
             </Box>
           )}
@@ -152,12 +182,16 @@ const FriendList = () => {
         <TabPanel value={tabValue} index={2}>
           {usersLoading ? (
             renderLoadingSkeleton()
-          ) : Array.isArray(nonFriendUsers) && nonFriendUsers.length === 0 ? (
+          ) : nonFriendUsers.length === 0 ? (
             renderEmptyState("No users to add", <IoPersonAdd size={48} />)
           ) : (
             <Box sx={{ p: 2 }}>
-              {(Array.isArray(nonFriendUsers) ? nonFriendUsers : []).map((user: any, index: number) => (
-                <FindFriendsItem user={user} key={index} currentUserId={currentUser?.id} />
+              {nonFriendUsers.map((user: any, index: number) => (
+                <FindFriendsItem 
+                  user={user} 
+                  key={user?.id || `user-${index}`} 
+                  currentUserId={currentUser?.id} 
+                />
               ))}
             </Box>
           )}

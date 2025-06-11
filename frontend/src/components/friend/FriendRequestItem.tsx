@@ -32,6 +32,13 @@ const FriendRequestItem = ({ currentUserId, friend }: FriendRequestItemProps) =>
       queryClient.invalidateQueries({
         queryKey: ["friendRequestList"],
       })
+      queryClient.invalidateQueries({
+        queryKey: ["nonFriendUsers"],
+      })
+      
+      queryClient.invalidateQueries({
+        queryKey: ["messageList"],
+      })
     },
   })
 

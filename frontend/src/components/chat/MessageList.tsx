@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useStompClient, useSubscription } from "react-stomp-hooks"
 import { Box, Typography, IconButton, Card, CardHeader, CardContent } from "@mui/material"
@@ -15,6 +15,7 @@ import type { IConversationResponse, IUser } from "@/interfaces"
 
 function MessageList({ currentUser }: { currentUser: IUser }) {
   const [showCreateGroup, setShowCreateGroup] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const { theme } = useThemeContext()
   const queryClient = useQueryClient()
   const stompClient = useStompClient()
@@ -26,6 +27,7 @@ function MessageList({ currentUser }: { currentUser: IUser }) {
   } = useQuery({
     queryKey: ["messageList"],
     queryFn: () => fetchConversationsByUserIdApi(currentUser.id),
+    enabled: !!currentUser.id,
   })
 
   useSubscription(`/user/${currentUser.username}/queue/messages`, (message) => {

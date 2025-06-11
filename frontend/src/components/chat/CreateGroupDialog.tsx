@@ -40,10 +40,17 @@ const CreateGroupDialog = ({ open, onClose, onCreateGroup }: CreateGroupDialogPr
   const { currentUser } = useAuthContext()
   const { theme } = useThemeContext()
 
-  const { data: friends, isLoading: friendsLoading } = useQuery({
+  const {
+    data: friendsData,
+    isLoading: friendsLoading,
+    error,
+  } = useQuery({
     queryKey: ["friendList"],
     queryFn: () => fetchFriendListApi(currentUser?.id),
+    enabled: !!currentUser?.id,
   })
+
+  const friends = Array.isArray(friendsData) ? friendsData : []
 
   const handleMemberToggle = (memberId: string) => {
     setSelectedMembers((prev) => (prev.includes(memberId) ? prev.filter((id) => id !== memberId) : [...prev, memberId]))
@@ -129,9 +136,21 @@ const CreateGroupDialog = ({ open, onClose, onCreateGroup }: CreateGroupDialogPr
           <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
             <CircularProgress size={40} sx={{ color: theme.primary }} />
           </Box>
+        ) : error ? (
+          <Box sx={{ textAlign: "center", p: 4 }}>
+            <Typography color="error" variant="body2">
+              Failed to load friends. Please try again.
+            </Typography>
+          </Box>
+        ) : friends.length === 0 ? (
+          <Box sx={{ textAlign: "center", p: 4 }}>
+            <Typography color="text.secondary" variant="body2">
+              No friends available. Add some friends first to create a group.
+            </Typography>
+          </Box>
         ) : (
           <List sx={{ maxHeight: 250, overflow: "auto", border: "1px solid #e0e0e0", borderRadius: 2 }}>
-            {friends?.map((friend: IUser) => (
+            {friends.map((friend: IUser) => (
               <ListItemButton key={friend.id} onClick={() => handleMemberToggle(friend.id)}>
                 <ListItemAvatar>
                   <Avatar src={friend.profilePicture} sx={{ width: 40, height: 40 }}>
@@ -165,7 +184,7 @@ const CreateGroupDialog = ({ open, onClose, onCreateGroup }: CreateGroupDialogPr
                 }}
               />
               {selectedMembers.map((memberId) => {
-                const member = friends?.find((f: IUser) => f.id === memberId)
+                const member = friends.find((f: IUser) => f.id === memberId)
                 return (
                   <Chip
                     key={memberId}
@@ -193,7 +212,7 @@ const CreateGroupDialog = ({ open, onClose, onCreateGroup }: CreateGroupDialogPr
         </Button>
         <Button
           onClick={handleCreate}
-          disabled={!groupName.trim() || selectedMembers.length < 2 || isCreating}
+          disabled={!groupName.trim() || selectedMembers.length < 2 || isCreating || friends.length === 0}
           variant="contained"
           startIcon={isCreating ? <CircularProgress size={16} /> : <MdGroupAdd size={18} />}
           sx={{

@@ -42,10 +42,13 @@ const AddMembersDialog = ({ open, onClose, conversation, onMembersAdded }: AddMe
   const { currentUser } = useAuthContext()
   const { theme } = useThemeContext()
 
-  const { data: friends, isLoading: friendsLoading } = useQuery({
+  const { data: friendsData, isLoading: friendsLoading } = useQuery({
     queryKey: ["friendList"],
     queryFn: () => fetchFriendListApi(currentUser?.id),
+    enabled: !!currentUser?.id,
   })
+
+  const friends = Array.isArray(friendsData) ? friendsData : []
 
   // Extract participant IDs correctly
   const participantIds = conversation.participants?.map((p: any) => {
@@ -53,7 +56,7 @@ const AddMembersDialog = ({ open, onClose, conversation, onMembersAdded }: AddMe
   }).filter(Boolean) || []
 
   // Split friends into available and existing members
-  const { availableFriends, existingMemberFriends } = friends?.reduce(
+  const { availableFriends, existingMemberFriends } = friends.reduce(
     (acc: { availableFriends: IUser[]; existingMemberFriends: IUser[] }, friend: IUser) => {
       const isAlreadyMember = participantIds.includes(friend.id)
       if (isAlreadyMember) {
@@ -64,7 +67,7 @@ const AddMembersDialog = ({ open, onClose, conversation, onMembersAdded }: AddMe
       return acc
     },
     { availableFriends: [] as IUser[], existingMemberFriends: [] as IUser[] },
-  ) || { availableFriends: [], existingMemberFriends: [] }
+  )
 
   const handleMemberToggle = (memberId: string) => {
     setSelectedMembers((prev) => (prev.includes(memberId) ? prev.filter((id) => id !== memberId) : [...prev, memberId]))
@@ -123,6 +126,14 @@ const AddMembersDialog = ({ open, onClose, conversation, onMembersAdded }: AddMe
         {friendsLoading ? (
           <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
             <CircularProgress size={40} sx={{ color: theme.primary }} />
+          </Box>
+        ) : availableFriends.length === 0 && existingMemberFriends.length === 0 ? (
+          <Box sx={{ textAlign: "center", p: 4 }}>
+            <Typography color="text.secondary">No friends available to add to this group.</Typography>
+          </Box>
+        ) : friends.length === 0 ? (
+          <Box sx={{ textAlign: "center", p: 4 }}>
+            <Typography color="text.secondary">No friends available to add to this group.</Typography>
           </Box>
         ) : availableFriends.length === 0 && existingMemberFriends.length === 0 ? (
           <Box sx={{ textAlign: "center", p: 4 }}>

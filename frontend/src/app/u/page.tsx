@@ -4,6 +4,7 @@ import { useAuthContext } from "@/context/useAuthContext"
 import DashboardLayout from "./DashboardLayout"
 import { Box, Typography } from "@mui/material"
 import { useThemeContext } from "@/context/ThemeContext"
+import { useEffect, useState } from "react"
 
 const Page = () => {
   const { currentUser } = useAuthContext()
@@ -13,6 +14,14 @@ const Page = () => {
   // useEffect(() => {
   //   connect()
   // }, [])
+
+  const [isMounted, setIsMounted] = useState(false)
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  if (!isMounted || !currentUser?.id) return null
 
   return (
     <DashboardLayout>

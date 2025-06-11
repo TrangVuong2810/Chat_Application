@@ -39,10 +39,15 @@ const LogoutDialog = ({ children }: { children: React.ReactNode }) => {
   const handleLogout = async () => {
     setIsLoading(true)
     try {
+      await logoutApi()
+
+      if (socketContext?.disconnect && typeof socketContext.disconnect === "function") {
+        console.log("Disconnecting WebSocket...")
+        socketContext.disconnect()
+      }
+      
       localStorage.removeItem("accessToken")
       localStorage.removeItem("currentUser")
-
-      await logoutApi()
 
       if (disconnect && typeof disconnect === "function") {
         disconnect()
