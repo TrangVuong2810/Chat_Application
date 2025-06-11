@@ -92,13 +92,13 @@ export const MessageInputField = ({
         },
       }}
       InputProps={{
-        startAdornment: (
-          <InputAdornment position="start">
-            <IconButton color="primary" aria-label="attach file">
-              <IoAttach size={20} />
-            </IconButton>
-          </InputAdornment>
-        ),
+        // startAdornment: (
+        //   <InputAdornment position="start">
+        //     <IconButton color="primary" aria-label="attach file">
+        //       <IoAttach size={20} />
+        //     </IconButton>
+        //   </InputAdornment>
+        // ),
         endAdornment: (
           <InputAdornment position="end">
             <IconButton
